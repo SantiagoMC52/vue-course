@@ -1,5 +1,5 @@
 <template>
-    <button @click="consi()"
+    <button @click="displayForm()"
     :style="{background: color}"
     class="btn">{{text}}
     </button>
@@ -13,8 +13,8 @@ export default {
     color: String,
   },
   methods: {
-    consi() {
-      console.log('hedi');
+    displayForm() {
+      this.$emit('btn-click');
     },
   },
 };

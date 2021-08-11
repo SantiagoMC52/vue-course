@@ -16,6 +16,8 @@ import Header from './components/Header.vue';
 import Tasks from './components/Tasks.vue';
 import AddTask from './components/AddTask.vue';
 
+const URL = 'http://localhost:5000/tasks';
+
 export default {
   name: 'App',
   components: {
@@ -30,44 +32,63 @@ export default {
     };
   },
   methods: {
-    addTask(task) {
-      this.tasks = [...this.tasks, task];
+    async addTask(task) {
+      const res = await fetch(URL, {
+        method: 'POST',
+        headers: {
+          'Content-type': 'application/json',
+        },
+        body: JSON.stringify(task),
+      });
+
+      const data = await res.json();
+      this.tasks = [...this.tasks, data];
     },
-    deleteTask(id) {
+    async deleteTask(id) {
       if (window.confirm('Are you sure?')) {
-        this.tasks = this.tasks.filter((task) => task.id !== id);
+        const res = await fetch(`${URL}/${id}`, {
+          method: 'DELETE',
+        });
+        if (res.status === 200) {
+          this.tasks = this.tasks.filter((task) => task.id !== id);
+        } else {
+          alert('Error deleting task'); // eslint-disable-line no-alert
+        }
       }
     },
-    toggleReminder(id) {
+    async toggleReminder(id) {
+      const taskToToggle = await this.fetchTask(id);
+      const updateTask = { ...taskToToggle, reminder: !taskToToggle.reminder };
+      const res = await fetch(`${URL}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-type': 'application/json',
+        },
+        body: JSON.stringify(updateTask),
+      });
+
+      const { reminder } = await res.json();
+
       this.tasks = this.tasks.map((task) => (
-        task.id === id ? { ...task, reminder: !task.reminder } : task
+        task.id === id ? { ...task, reminder } : task
       ));
     },
     toggleAddTask() {
       this.showAddTask = !this.showAddTask;
     },
+    async fetchTasks() {
+      const res = await fetch(URL);
+      const data = await res.json();
+      return data;
+    },
+    async fetchTask(id) {
+      const res = await fetch(`${URL}/${id}`);
+      const data = await res.json();
+      return data;
+    },
   },
-  created() {
-    this.tasks = [
-      {
-        id: 1,
-        text: 'Doctors Appointment',
-        day: 'March 1st at 2:30pm',
-        reminder: true,
-      },
-      {
-        id: 2,
-        text: 'Meeting at school',
-        day: 'March 3rd at 1:30pm',
-        reminder: true,
-      },
-      {
-        id: 3,
-        text: 'Food shopping',
-        day: 'March 3rd at 11:00am',
-        reminder: false,
-      },
-    ];
+  async created() {
+    this.tasks = await this.fetchTasks();
   },
 };
 </script>
